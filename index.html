@@ -691,7 +691,8 @@
             const segmentAngle = (2 * Math.PI) / countries.length;
 
             countries.forEach((country, index) => {
-                const startAngle = index * segmentAngle - Math.PI / 2;
+                // Offset by half a segment so segments are centered under the pointer
+                const startAngle = index * segmentAngle - Math.PI / 2 - segmentAngle / 2;
                 const endAngle = startAngle + segmentAngle;
 
                 // Draw segment
@@ -759,9 +760,9 @@
             setTimeout(() => {
                 const normalizedRotation = currentRotation % 360;
                 const segmentAngle = 360 / countries.length;
-                // Adjust for pointer at top (270 degrees from right)
-                const adjustedRotation = (360 - normalizedRotation + 90) % 360;
-                const winningIndex = Math.floor(adjustedRotation / segmentAngle) % countries.length;
+                // Calculate which segment is under the pointer (at top)
+                // Wheel rotates clockwise, so we subtract from total segments
+                const winningIndex = (countries.length - Math.floor(normalizedRotation / segmentAngle)) % countries.length;
 
                 showResult(countries[winningIndex]);
                 isSpinning = false;
