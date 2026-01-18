@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 Relocation Roulette - Where Will You Move?</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #eee;
+            image-rendering: pixelated;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1),
+                rgba(0, 0, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            z-index: 1000;
+        }
+
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 24px;
+            color: #ffcc00;
+            text-shadow: 4px 4px 0px #ff6600, 8px 8px 0px #cc0000;
+            margin-bottom: 10px;
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        .subtitle {
+            font-size: 10px;
+            color: #88ff88;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            margin: 0 auto 30px;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+            box-shadow: 0 0 0 8px #ffcc00, 0 0 0 16px #ff6600, 0 0 40px rgba(255, 204, 0, 0.5);
+        }
+
+        .wheel-segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            left: 50%;
+            top: 0;
+            transform-origin: 0% 100%;
+            clip-path: polygon(0 100%, 100% 0, 0 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .wheel-segment-inner {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            left: -50%;
+            top: -50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transform: rotate(22.5deg);
+            padding-left: 60px;
+            padding-bottom: 80px;
+        }
+
+        .segment-icon {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .segment-text {
+            font-size: 7px;
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+            text-align: center;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #ff0066;
+            filter: drop-shadow(0 4px 0 #aa0044);
+            z-index: 10;
+        }
+
+        .pointer::after {
+            content: '';
+            position: absolute;
+            top: -35px;
+            left: -10px;
+            width: 20px;
+            height: 10px;
+            background: #ff66aa;
+        }
+
+        .spin-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            padding: 20px 40px;
+            background: linear-gradient(180deg, #44ff44 0%, #22aa22 100%);
+            border: none;
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #116611, 0 10px 20px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+            margin-bottom: 30px;
+        }
+
+        .spin-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #116611, 0 12px 25px rgba(0,0,0,0.3);
+        }
+
+        .spin-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #116611;
+        }
+
+        .spin-btn:disabled {
+            background: linear-gradient(180deg, #666 0%, #444 100%);
+            box-shadow: 0 6px 0 #222;
+            cursor: not-allowed;
+        }
+
+        .result-panel {
+            background: #16213e;
+            border: 4px solid #0f3460;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 200px;
+            display: none;
+        }
+
+        .result-panel.show {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .result-title {
+            font-size: 14px;
+            color: #ffcc00;
+            margin-bottom: 15px;
+        }
+
+        .result-country {
+            font-size: 20px;
+            color: #ff66aa;
+            margin-bottom: 20px;
+            animation: blink 0.5s ease-in-out 3;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .country-info {
+            text-align: left;
+            font-size: 8px;
+            line-height: 2;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px dashed #0f3460;
+            padding: 8px 0;
+        }
+
+        .info-label {
+            color: #88ff88;
+        }
+
+        .info-value {
+            color: #fff;
+        }
+
+        .stats-bar {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-block {
+            width: 12px;
+            height: 12px;
+            background: #ffcc00;
+        }
+
+        .stat-block.empty {
+            background: #333;
+        }
+
+        .fun-fact {
+            background: #0f3460;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 8px;
+            line-height: 1.8;
+            color: #88ccff;
+        }
+
+        .fun-fact-label {
+            color: #ffcc00;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .history-panel {
+            background: #16213e;
+            border: 4px solid #0f3460;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .history-title {
+            font-size: 10px;
+            color: #ffcc00;
+            margin-bottom: 15px;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .history-item {
+            background: #0f3460;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .history-count {
+            font-size: 20px;
+            color: #ff66aa;
+        }
+
+        .history-name {
+            font-size: 6px;
+            color: #88ff88;
+            margin-top: 5px;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 999;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .bonus-round {
+            background: linear-gradient(45deg, #ff0066, #ffcc00, #44ff44, #00ccff);
+            background-size: 400% 400%;
+            animation: gradientBG 2s ease infinite;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .bonus-round.show {
+            display: block;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .bonus-text {
+            color: #000;
+            font-size: 12px;
+            text-shadow: 1px 1px 0 #fff;
+        }
+
+        .pixel-border {
+            box-shadow:
+                -4px 0 0 0 #ffcc00,
+                4px 0 0 0 #ffcc00,
+                0 -4px 0 0 #ffcc00,
+                0 4px 0 0 #ffcc00;
+        }
+
+        .reset-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            padding: 10px 20px;
+            background: #ff0066;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .reset-btn:hover {
+            background: #ff3388;
+        }
+
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            padding: 10px;
+            background: #16213e;
+            border: 2px solid #0f3460;
+            color: #88ff88;
+            cursor: pointer;
+        }
+
+        .comparison-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            padding: 10px 15px;
+            background: #0f3460;
+            border: none;
+            color: #88ccff;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .comparison-btn:hover {
+            background: #1a4a80;
+        }
+
+        .comparison-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .comparison-modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .comparison-content {
+            background: #16213e;
+            border: 4px solid #ffcc00;
+            padding: 20px;
+            max-width: 900px;
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .comparison-card {
+            background: #0f3460;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .comparison-card h3 {
+            font-size: 10px;
+            color: #ffcc00;
+            margin-bottom: 15px;
+        }
+
+        .comparison-stat {
+            font-size: 7px;
+            color: #88ff88;
+            margin: 10px 0;
+            text-align: left;
+        }
+
+        .comparison-stat span {
+            color: #fff;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .close-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            padding: 10px 20px;
+            background: #ff0066;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .lucky-number {
+            font-size: 10px;
+            color: #88ccff;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <button class="sound-toggle" onclick="toggleSound()">🔊 SOUND: ON</button>
+
+    <div class="game-container">
+        <h1 class="title">RELOCATION ROULETTE</h1>
+        <p class="subtitle">★ WHERE WILL YOUR FAMILY MOVE? ★</p>
+
+        <p class="lucky-number">TODAY'S LUCKY NUMBER: <span id="luckyNumber">7</span></p>
+
+        <div class="bonus-round" id="bonusRound">
+            <p class="bonus-text">🌟 BONUS ROUND! SPIN AGAIN FOR DOUBLE LUCK! 🌟</p>
+        </div>
+
+        <div class="wheel-container">
+            <div class="pointer"></div>
+            <canvas id="wheel" class="wheel" width="350" height="350"></canvas>
+        </div>
+
+        <button class="spin-btn" id="spinBtn" onclick="spinWheel()">
+            🎰 SPIN THE WHEEL! 🎰
+        </button>
+
+        <div class="result-panel" id="resultPanel">
+            <h2 class="result-title">YOUR DESTINY AWAITS IN...</h2>
+            <p class="result-country" id="resultCountry"></p>
+            <div class="country-info" id="countryInfo"></div>
+            <button class="comparison-btn" onclick="showComparison()">📊 COMPARE ALL DESTINATIONS</button>
+        </div>
+
+        <div class="history-panel">
+            <h3 class="history-title">📜 SPIN HISTORY</h3>
+            <div class="history-grid" id="historyGrid">
+                <div class="history-item">
+                    <div class="history-count" id="count-portugal">0</div>
+                    <div class="history-name">🇵🇹 PORTUGAL</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-count" id="count-newzealand">0</div>
+                    <div class="history-name">🇳🇿 NEW ZEALAND</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-count" id="count-spain">0</div>
+                    <div class="history-name">🇪🇸 SPAIN</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-count" id="count-costarica">0</div>
+                    <div class="history-name">🇨🇷 COSTA RICA</div>
+                </div>
+            </div>
+            <button class="reset-btn" onclick="resetHistory()">🔄 RESET HISTORY</button>
+        </div>
+    </div>
+
+    <div class="comparison-modal" id="comparisonModal">
+        <div class="comparison-content">
+            <h2 class="result-title">📊 DESTINATION SHOWDOWN 📊</h2>
+            <div class="comparison-grid" id="comparisonGrid"></div>
+            <button class="close-btn" onclick="closeComparison()">✖ CLOSE</button>
+        </div>
+    </div>
+
+    <script>
+        // Country data
+        const countries = [
+            {
+                name: "Portugal",
+                flag: "🇵🇹",
+                color: "#e74c3c",
+                capital: "Lisbon",
+                language: "Portuguese",
+                currency: "Euro (€)",
+                climate: "Mediterranean",
+                costOfLiving: 3,
+                safety: 5,
+                healthcare: 4,
+                english: 4,
+                beaches: 5,
+                adventure: 3,
+                food: 5,
+                funFact: "Portugal is the oldest nation-state in Europe! It's also home to the world's oldest bookstore, Livraria Bertrand, opened in 1732.",
+                highlights: ["Amazing pastéis de nata", "Stunning Algarve coast", "Rich history", "Affordable living"]
+            },
+            {
+                name: "New Zealand",
+                flag: "🇳🇿",
+                color: "#3498db",
+                capital: "Wellington",
+                language: "English & Māori",
+                currency: "NZ Dollar ($)",
+                climate: "Temperate",
+                costOfLiving: 2,
+                safety: 5,
+                healthcare: 5,
+                english: 5,
+                beaches: 4,
+                adventure: 5,
+                food: 4,
+                funFact: "New Zealand was the first country to give women the right to vote in 1893! It's also the adventure capital of the world.",
+                highlights: ["Lord of the Rings scenery", "Extreme sports paradise", "Friendly locals", "Clean environment"]
+            },
+            {
+                name: "Spain",
+                flag: "🇪🇸",
+                color: "#f39c12",
+                capital: "Madrid",
+                language: "Spanish",
+                currency: "Euro (€)",
+                climate: "Mediterranean",
+                costOfLiving: 3,
+                safety: 4,
+                healthcare: 5,
+                english: 3,
+                beaches: 5,
+                adventure: 4,
+                food: 5,
+                funFact: "Spain has the second-highest number of bars per capita in the world! Tapas culture means you often get free snacks with drinks.",
+                highlights: ["Incredible food scene", "Vibrant nightlife", "Beautiful architecture", "Siesta lifestyle"]
+            },
+            {
+                name: "Costa Rica",
+                flag: "🇨🇷",
+                color: "#27ae60",
+                capital: "San José",
+                language: "Spanish",
+                currency: "Colón (₡)",
+                climate: "Tropical",
+                costOfLiving: 3,
+                safety: 4,
+                healthcare: 4,
+                english: 3,
+                beaches: 5,
+                adventure: 5,
+                food: 4,
+                funFact: "Costa Rica has no army! They abolished it in 1949 and invested that money in education and healthcare instead. Pura Vida!",
+                highlights: ["Incredible biodiversity", "Eco-tourism paradise", "Both Caribbean & Pacific beaches", "Laid-back lifestyle"]
+            }
+        ];
+
+        let isSpinning = false;
+        let currentRotation = 0;
+        let history = { portugal: 0, newzealand: 0, spain: 0, costarica: 0 };
+        let soundEnabled = true;
+        let totalSpins = 0;
+
+        // Audio context for 8-bit sounds
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playSound(frequency, duration, type = 'square') {
+            if (!soundEnabled) return;
+            initAudio();
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSpinSound() {
+            let i = 0;
+            const interval = setInterval(() => {
+                playSound(200 + (i * 50), 0.05);
+                i++;
+                if (i > 20) clearInterval(interval);
+            }, 100);
+        }
+
+        function playWinSound() {
+            const notes = [523, 659, 784, 1047];
+            notes.forEach((note, i) => {
+                setTimeout(() => playSound(note, 0.2), i * 150);
+            });
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.querySelector('.sound-toggle');
+            btn.textContent = soundEnabled ? '🔊 SOUND: ON' : '🔇 SOUND: OFF';
+            if (soundEnabled) {
+                playSound(440, 0.1);
+            }
+        }
+
+        // Draw wheel on canvas
+        function drawWheel() {
+            const canvas = document.getElementById('wheel');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2 - 5;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const segmentAngle = (2 * Math.PI) / countries.length;
+
+            countries.forEach((country, index) => {
+                const startAngle = index * segmentAngle - Math.PI / 2;
+                const endAngle = startAngle + segmentAngle;
+
+                // Draw segment
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fillStyle = country.color;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Draw text
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(startAngle + segmentAngle / 2);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#fff';
+                ctx.font = '14px "Press Start 2P"';
+                ctx.shadowColor = '#000';
+                ctx.shadowBlur = 4;
+                ctx.fillText(country.flag, radius - 20, 5);
+                ctx.font = '8px "Press Start 2P"';
+                ctx.fillText(country.name.toUpperCase(), radius - 45, 5);
+                ctx.restore();
+            });
+
+            // Draw center
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ffcc00';
+            ctx.fill();
+            ctx.strokeStyle = '#ff6600';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            ctx.fillStyle = '#000';
+            ctx.font = '10px "Press Start 2P"';
+            ctx.textAlign = 'center';
+            ctx.fillText('SPIN', centerX, centerY + 4);
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+
+            isSpinning = true;
+            const btn = document.getElementById('spinBtn');
+            btn.disabled = true;
+            btn.textContent = '🎲 SPINNING... 🎲';
+
+            playSpinSound();
+
+            // Random rotation (at least 5 full spins + random segment)
+            const spins = 5 + Math.random() * 3;
+            const extraDegrees = Math.random() * 360;
+            const totalRotation = spins * 360 + extraDegrees;
+
+            currentRotation += totalRotation;
+
+            const canvas = document.getElementById('wheel');
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+            // Determine winner after spin
+            setTimeout(() => {
+                const normalizedRotation = currentRotation % 360;
+                const segmentAngle = 360 / countries.length;
+                // Adjust for pointer at top (270 degrees from right)
+                const adjustedRotation = (360 - normalizedRotation + 90) % 360;
+                const winningIndex = Math.floor(adjustedRotation / segmentAngle) % countries.length;
+
+                showResult(countries[winningIndex]);
+                isSpinning = false;
+                btn.disabled = false;
+                btn.textContent = '🎰 SPIN AGAIN! 🎰';
+
+                totalSpins++;
+                checkBonusRound();
+            }, 4000);
+        }
+
+        function showResult(country) {
+            playWinSound();
+            createConfetti();
+
+            const panel = document.getElementById('resultPanel');
+            const countryEl = document.getElementById('resultCountry');
+            const infoEl = document.getElementById('countryInfo');
+
+            panel.classList.add('show');
+            countryEl.textContent = `${country.flag} ${country.name.toUpperCase()} ${country.flag}`;
+
+            const statBar = (value) => {
+                let bars = '';
+                for (let i = 0; i < 5; i++) {
+                    bars += `<span class="stat-block ${i < value ? '' : 'empty'}"></span>`;
+                }
+                return `<div class="stats-bar">${bars}</div>`;
+            };
+
+            infoEl.innerHTML = `
+                <div class="info-row">
+                    <span class="info-label">CAPITAL:</span>
+                    <span class="info-value">${country.capital}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">LANGUAGE:</span>
+                    <span class="info-value">${country.language}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">CURRENCY:</span>
+                    <span class="info-value">${country.currency}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">CLIMATE:</span>
+                    <span class="info-value">${country.climate}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">COST OF LIVING:</span>
+                    ${statBar(country.costOfLiving)} <span style="font-size: 6px; color: #666;">(5=cheapest)</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">SAFETY:</span>
+                    ${statBar(country.safety)}
+                </div>
+                <div class="info-row">
+                    <span class="info-label">HEALTHCARE:</span>
+                    ${statBar(country.healthcare)}
+                </div>
+                <div class="info-row">
+                    <span class="info-label">ENGLISH SPOKEN:</span>
+                    ${statBar(country.english)}
+                </div>
+                <div class="info-row">
+                    <span class="info-label">BEACHES:</span>
+                    ${statBar(country.beaches)}
+                </div>
+                <div class="info-row">
+                    <span class="info-label">ADVENTURE:</span>
+                    ${statBar(country.adventure)}
+                </div>
+                <div class="fun-fact">
+                    <span class="fun-fact-label">💡 FUN FACT:</span>
+                    ${country.funFact}
+                </div>
+                <div class="fun-fact" style="margin-top: 10px; background: #1a4a80;">
+                    <span class="fun-fact-label">✨ HIGHLIGHTS:</span>
+                    ${country.highlights.map(h => '• ' + h).join('<br>')}
+                </div>
+            `;
+
+            // Update history
+            const key = country.name.toLowerCase().replace(' ', '');
+            history[key]++;
+            document.getElementById(`count-${key}`).textContent = history[key];
+        }
+
+        function createConfetti() {
+            const colors = ['#ff0066', '#ffcc00', '#44ff44', '#00ccff', '#ff66aa', '#ff6600'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 50);
+            }
+        }
+
+        function checkBonusRound() {
+            if (totalSpins > 0 && totalSpins % 5 === 0) {
+                const bonus = document.getElementById('bonusRound');
+                bonus.classList.add('show');
+                setTimeout(() => bonus.classList.remove('show'), 5000);
+            }
+        }
+
+        function resetHistory() {
+            history = { portugal: 0, newzealand: 0, spain: 0, costarica: 0 };
+            Object.keys(history).forEach(key => {
+                document.getElementById(`count-${key}`).textContent = '0';
+            });
+            totalSpins = 0;
+            playSound(200, 0.2);
+        }
+
+        function showComparison() {
+            const modal = document.getElementById('comparisonModal');
+            const grid = document.getElementById('comparisonGrid');
+
+            grid.innerHTML = countries.map(c => `
+                <div class="comparison-card">
+                    <h3>${c.flag} ${c.name.toUpperCase()}</h3>
+                    <div class="comparison-stat">🏛️ Capital:<span>${c.capital}</span></div>
+                    <div class="comparison-stat">🗣️ Language:<span>${c.language}</span></div>
+                    <div class="comparison-stat">💰 Currency:<span>${c.currency}</span></div>
+                    <div class="comparison-stat">🌡️ Climate:<span>${c.climate}</span></div>
+                    <div class="comparison-stat">💵 Cost: ${'★'.repeat(c.costOfLiving)}${'☆'.repeat(5-c.costOfLiving)}</div>
+                    <div class="comparison-stat">🛡️ Safety: ${'★'.repeat(c.safety)}${'☆'.repeat(5-c.safety)}</div>
+                    <div class="comparison-stat">🏥 Health: ${'★'.repeat(c.healthcare)}${'☆'.repeat(5-c.healthcare)}</div>
+                    <div class="comparison-stat">🇬🇧 English: ${'★'.repeat(c.english)}${'☆'.repeat(5-c.english)}</div>
+                    <div class="comparison-stat">🏖️ Beaches: ${'★'.repeat(c.beaches)}${'☆'.repeat(5-c.beaches)}</div>
+                    <div class="comparison-stat">🎿 Adventure: ${'★'.repeat(c.adventure)}${'☆'.repeat(5-c.adventure)}</div>
+                </div>
+            `).join('');
+
+            modal.classList.add('show');
+            playSound(523, 0.1);
+        }
+
+        function closeComparison() {
+            document.getElementById('comparisonModal').classList.remove('show');
+            playSound(262, 0.1);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            drawWheel();
+            document.getElementById('luckyNumber').textContent = Math.floor(Math.random() * 99) + 1;
+        });
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !isSpinning) {
+                e.preventDefault();
+                spinWheel();
+            }
+            if (e.code === 'Escape') {
+                closeComparison();
+            }
+        });
+    </script>
+</body>
+</html>
