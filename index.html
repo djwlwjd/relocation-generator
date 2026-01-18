@@ -760,9 +760,9 @@
             setTimeout(() => {
                 const normalizedRotation = currentRotation % 360;
                 const segmentAngle = 360 / countries.length;
-                // Calculate which segment is under the pointer (at top)
-                // Wheel rotates clockwise, so we subtract from total segments
-                const winningIndex = (countries.length - Math.floor(normalizedRotation / segmentAngle)) % countries.length;
+                // Add half segment to account for centered segments, then calculate index
+                const adjustedRotation = (normalizedRotation + segmentAngle / 2) % 360;
+                const winningIndex = (countries.length - Math.floor(adjustedRotation / segmentAngle)) % countries.length;
 
                 showResult(countries[winningIndex]);
                 isSpinning = false;
